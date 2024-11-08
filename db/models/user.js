@@ -3,8 +3,9 @@ const { Model, Sequelize, DataTypes } = require("sequelize");
 const bcrypt = require("bcrypt");
 const sequelize = require("../../config/database");
 const AppError = require("../../utils/appError");
+const project = require("./project");
 
-module.exports = sequelize.define(
+const user = sequelize.define(
     "user",
     {
         id: {
@@ -16,80 +17,82 @@ module.exports = sequelize.define(
         userType: {
             type: DataTypes.ENUM("0", "1", "2"),
             allowNull: false,
-            validate:{
+            validate: {
                 notNull: {
-                    msg: 'userType cannot be null',
+                    msg: "userType cannot be null",
                 },
                 notEmpty: {
-                    msg: 'userType cannot be empty',
-                }
-            }
+                    msg: "userType cannot be empty",
+                },
+            },
         },
         firstName: {
             type: DataTypes.STRING,
             allowNull: false,
-            validate:{
+            validate: {
                 notNull: {
-                    msg: 'firstName cannot be null',
+                    msg: "firstName cannot be null",
                 },
                 notEmpty: {
-                    msg: 'firstName cannot be empty',
-                }
-            }
+                    msg: "firstName cannot be empty",
+                },
+            },
         },
         lastName: {
             type: DataTypes.STRING,
             allowNull: false,
-            validate:{
+            validate: {
                 notNull: {
-                    msg: 'lastName cannot be null',
+                    msg: "lastName cannot be null",
                 },
                 notEmpty: {
-                    msg: 'lastName cannot be empty',
-                }
-            }
+                    msg: "lastName cannot be empty",
+                },
+            },
         },
         email: {
             type: DataTypes.STRING,
             allowNull: false,
-            validate:{
+            validate: {
                 notNull: {
-                    msg: 'email cannot be null',
+                    msg: "email cannot be null",
                 },
                 notEmpty: {
-                    msg: 'email cannot be empty',
+                    msg: "email cannot be empty",
                 },
-                isEmail:{
-                    msg: 'Invalid email id',
-                }
-            }
+                isEmail: {
+                    msg: "Invalid email id",
+                },
+            },
         },
         password: {
             type: DataTypes.STRING,
             allowNull: false,
-            validate:{
+            validate: {
                 notNull: {
-                    msg: 'password cannot be null',
+                    msg: "password cannot be null",
                 },
                 notEmpty: {
-                    msg: 'password cannot be empty',
+                    msg: "password cannot be empty",
                 },
-            }
+            },
         },
         confirmPassword: {
             type: DataTypes.VIRTUAL,
             set(value) {
-                if(this.password.length < 8){
+                if (this.password.length < 8) {
                     throw new AppError(
-                        'Password lenght must be grater than 8', 400
-                    )
+                        "Password lenght must be grater than 8",
+                        400
+                    );
                 }
                 if (value === this.password) {
                     const hashPassword = bcrypt.hashSync(value, 10);
                     this.setDataValue("password", hashPassword);
                 } else {
                     throw new AppError(
-                        "Password and confirm password must be the same", 400
+                        "Password and confirm password must be the same",
+                        400
                     );
                 }
             },
@@ -112,3 +115,10 @@ module.exports = sequelize.define(
         modelName: "user",
     }
 );
+
+user.hasMany(project, { foreignKey: "createdBy" });
+project.belongsTo(user, {
+    foreignKey: "createdBy",
+});
+
+module.exports = user;
