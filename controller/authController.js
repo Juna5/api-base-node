@@ -14,7 +14,7 @@ const signup = catchAsync(async (req, res, next) => {
     const body = req.body;
 
     if (!["1", "2"].includes(body.userType)) {
-        throw new AppError('Invalid user Type', 400)
+        throw new AppError("Invalid user Type", 400);
     }
 
     const newUser = await user.create({
@@ -27,7 +27,7 @@ const signup = catchAsync(async (req, res, next) => {
     });
 
     if (!newUser) {
-        return next(new AppError('Failed to create the user', 400));
+        return next(new AppError("Failed to create the user", 400));
     }
 
     const result = newUser.toJSON();
@@ -51,13 +51,13 @@ const login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        throw next(new AppError('Please provide email and password', 400));
+        throw next(new AppError("Please provide email and password", 400));
     }
 
     const result = await user.findOne({ where: { email } });
 
     if (!result || !(await bcrypt.compare(password, result.password))) {
-        throw next(new AppError('Incorrect email or password', 401));
+        throw next(new AppError("Incorrect email or password", 401));
     }
 
     const token = generateToken({
@@ -70,4 +70,30 @@ const login = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { signup, login };
+const authentication = catchAsync(async (req, res, next) => {
+    //get the token from headers
+    let token = "";
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith("Bearer")
+    ) {
+        //Bearer token
+        token = req.headers.authorization.split(" ")[1];
+    }
+    if (!token) {
+        return next(new AppError("Please login to get access"));
+    }
+
+    const tokenDetail = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    const freshUser = user.findByPk(tokenDetail.id);
+
+    if (!freshUser) {
+        return next(new AppError("User no longer exitst", 400));
+    }
+
+    req.user = freshUser;
+    return next();
+});
+
+module.exports = { signup, login, authentication };
