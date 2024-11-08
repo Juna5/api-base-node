@@ -3,7 +3,7 @@ const catchAsync = require("../utils/catchAsync");
 
 const store = catchAsync(async (req, res, next) => {
     const body = req.body;
-    console.log("foo");
+    const userId = req.user.id;
 
     const row = await project.create({
         title: body.title,
@@ -14,7 +14,7 @@ const store = catchAsync(async (req, res, next) => {
         productUrl: body.productUrl,
         category: body.category,
         tags: body.tags,
-        createdBy: 1,
+        createdBy: userId,
     });
 
     return res.status(201).json({

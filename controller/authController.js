@@ -81,12 +81,12 @@ const authentication = catchAsync(async (req, res, next) => {
         token = req.headers.authorization.split(" ")[1];
     }
     if (!token) {
-        return next(new AppError("Please login to get access"));
+        return next(new AppError("Please login to get access", 401));
     }
 
     const tokenDetail = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const freshUser = user.findByPk(tokenDetail.id);
+    const freshUser = await user.findByPk(tokenDetail.id);
 
     if (!freshUser) {
         return next(new AppError("User no longer exitst", 400));
@@ -96,4 +96,19 @@ const authentication = catchAsync(async (req, res, next) => {
     return next();
 });
 
-module.exports = { signup, login, authentication };
+const restrictTo = (...userType) => {
+    const checkPermission = (req, res, next) => {
+        if (!userType.includes(req.user.userType)) {
+            return next(
+                new AppError(
+                    "You dont have permission to perform this action",
+                    403
+                )
+            );
+        }
+        return next();
+    };
+    return checkPermission;
+};
+
+module.exports = { signup, login, authentication, restrictTo };
